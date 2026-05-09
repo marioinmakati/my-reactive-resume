@@ -129,25 +129,44 @@ Built with privacy as a core principle, Reactive Resume gives you complete owner
   </tr>
 </table>
 
-## Quick Start
+## Quick Start (本地开发模式 · 推荐)
 
-The quickest way to run Reactive Resume locally:
+基础设施统一使用公共组件 [`/root/workspace/env/my-docker-config`](file:///root/workspace/env/my-docker-config)(提供 PostgreSQL 等共享服务),本项目自身只额外起一个 Browserless 用于 PDF 导出,app 在宿主机以 `vp dev` 启动并热更新。
 
 ```bash
-# Clone the repository
-git clone https://github.com/amruthpillai/reactive-resume.git
-cd reactive-resume
+# 1. 启动公共 PostgreSQL(my-docker-config)
+source /root/workspace/env/my-docker-config/infra/scripts/infra.sh
+infra-up postgres
 
-# Start all services
-docker compose up -d
+# 2. 在 infra-postgres 中创建本项目数据库
+sudo docker exec infra-postgres psql -U postgres \
+  -c "CREATE DATABASE reactive_resume;"
 
-# Access the app
-open http://localhost:3000
+# 3. 启动 Browserless(接到 infra_infra_net,与公共组件同网)
+sudo docker run -d --name reactive-browserless \
+  --network infra_infra_net -p 4000:3000 \
+  -e TOKEN=1234567890 -e CONCURRENT=10 \
+  ghcr.io/browserless/chromium:latest
+
+# 4. 配置 .env(仅首次)
+cp .env.example .env
+# 修改下列三项:
+#   DATABASE_URL="postgresql://postgres:root123@localhost:5432/reactive_resume"
+#   PRINTER_APP_URL="http://172.20.0.1:3000"   # infra_infra_net 网关
+#   PRINTER_ENDPOINT="ws://localhost:4000?token=1234567890"
+
+# 5. 安装依赖(本项目强制使用 pnpm)
+pnpm install
+
+# 6. 启动开发服务器
+pnpm exec vp dev
+
+# 访问 http://localhost:3000
 ```
 
-[![Build with Ona](https://ona.com/build-with-ona.svg)](https://app.ona.com/#https://github.com/amruthpillai/reactive-resume)
+> 详细步骤、备选启动方式以及常见问题的修复,见 [STARTUP.md](./STARTUP.md)。
 
-For detailed setup instructions, environment configuration, and self-hosting guides, see the [documentation](https://docs.rxresu.me).
+[![Build with Ona](https://ona.com/build-with-ona.svg)](https://app.ona.com/#https://github.com/amruthpillai/reactive-resume)
 
 ## Tech Stack
 
