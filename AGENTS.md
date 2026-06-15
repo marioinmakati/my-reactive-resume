@@ -166,6 +166,33 @@ PRINTER_ENDPOINT="ws://localhost:4000?token=1234567890"
 - Vite and Nitro use beta/nightly builds. Occasional upstream issues may occur.
 - If port 3000 is occupied: `kill $(lsof -ti:3000)`.
 
+## Syncing with Upstream
+
+The original repository is already configured as the `upstream` remote (`amruthpillai/reactive-resume`).
+
+```bash
+# Fetch latest changes from upstream
+git fetch upstream
+
+# Preview what's new before merging
+git log main..upstream/main --oneline
+
+# Merge upstream into your current branch
+git merge upstream/main
+# — or rebase (puts your commits on top, cleaner history) —
+git rebase upstream/main
+
+# If conflicts get messy, abort cleanly
+git merge --abort    # or: git rebase --abort
+```
+
+After merging, always run:
+
+```bash
+pnpm install          # dependencies may have changed
+pnpm exec vp check    # lint + fmt + types
+```
+
 ## Review Checklist for Agents
 
 - [ ] Run `pnpm install` after pulling remote changes and before getting started.
