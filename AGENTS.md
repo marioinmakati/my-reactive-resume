@@ -126,29 +126,29 @@ PRINTER_ENDPOINT="ws://localhost:4000?token=1234567890"
 
 **Package manager:** `pnpm` is enforced by a `preinstall` hook (`npx only-allow pnpm`). `vp` is a thin wrapper around pnpm for package ops, but `pnpm exec vp <cmd>` also works. Do **not** use npm or yarn.
 
-| Task                       | Command                                                         |
-| -------------------------- | --------------------------------------------------------------- |
-| Install dependencies       | `pnpm install`                                                  |
-| Dev server (port 3000)     | `pnpm exec vp dev`                                              |
-| Lint (Oxlint, type-aware)  | `pnpm exec vp lint --type-aware`                                |
-| Lint + fix                 | `pnpm lint:fix`                                                 |
-| Format check               | `pnpm fmt`                                                      |
-| Format fix                 | `pnpm fmt:fix`                                                  |
-| Check (lint + fmt + types) | `pnpm exec vp check`                                            |
-| Typecheck                  | `pnpm typecheck` (uses tsgo)                                    |
-| Run all tests              | `pnpm exec vp test`                                             |
-| Run a single test file     | `pnpm exec vp test src/utils/date.test.ts`                      |
-| Test with coverage         | `pnpm test:coverage`                                            |
-| DB migrations generate     | `pnpm db:generate`                                              |
-| DB migrations run          | `pnpm db:migrate` (auto-runs on dev start)                      |
-| DB studio                  | `pnpm db:studio`                                                |
-| i18n extraction            | `pnpm lingui:extract`                                           |
-| Add a dependency           | `pnpm add <package>`                                            |
-| Remove a dependency        | `pnpm remove <package>`                                         |
-| One-off binary             | `pnpm exec vp dlx <package>`                                    |
-| Build for production       | `pnpm exec vp build`                                            |
-| Preview production build   | `pnpm exec vp preview`                                          |
-| Start production server    | `pnpm start`                                                    |
+| Task                       | Command                                    |
+| -------------------------- | ------------------------------------------ |
+| Install dependencies       | `pnpm install`                             |
+| Dev server (port 3000)     | `pnpm exec vp dev`                         |
+| Lint (Oxlint, type-aware)  | `pnpm exec vp lint --type-aware`           |
+| Lint + fix                 | `pnpm lint:fix`                            |
+| Format check               | `pnpm fmt`                                 |
+| Format fix                 | `pnpm fmt:fix`                             |
+| Check (lint + fmt + types) | `pnpm exec vp check`                       |
+| Typecheck                  | `pnpm typecheck` (uses tsgo)               |
+| Run all tests              | `pnpm exec vp test`                        |
+| Run a single test file     | `pnpm exec vp test src/utils/date.test.ts` |
+| Test with coverage         | `pnpm test:coverage`                       |
+| DB migrations generate     | `pnpm db:generate`                         |
+| DB migrations run          | `pnpm db:migrate` (auto-runs on dev start) |
+| DB studio                  | `pnpm db:studio`                           |
+| i18n extraction            | `pnpm lingui:extract`                      |
+| Add a dependency           | `pnpm add <package>`                       |
+| Remove a dependency        | `pnpm remove <package>`                    |
+| One-off binary             | `pnpm exec vp dlx <package>`               |
+| Build for production       | `pnpm exec vp build`                       |
+| Preview production build   | `pnpm exec vp preview`                     |
+| Start production server    | `pnpm start`                               |
 
 ## Vite+ Pitfalls
 

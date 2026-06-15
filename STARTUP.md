@@ -21,12 +21,12 @@
 
 ## 前置依赖
 
-| 依赖 | 版本要求 | 说明 |
-|------|----------|------|
-| Node.js | ≥ 20 | 推荐 22 LTS |
-| pnpm | 10.33.0(由 `packageManager` 锁定) | 通过 corepack 自动启用即可 |
-| Docker | 任意较新版本 | 公共组件和 Browserless 都在 Docker 里跑 |
-| 公共基础设施仓库 | `/root/workspace/env/my-docker-config` | 提供 `infra-postgres` 等共享服务 |
+| 依赖             | 版本要求                               | 说明                                    |
+| ---------------- | -------------------------------------- | --------------------------------------- |
+| Node.js          | ≥ 20                                   | 推荐 22 LTS                             |
+| pnpm             | 10.33.0(由 `packageManager` 锁定)      | 通过 corepack 自动启用即可              |
+| Docker           | 任意较新版本                           | 公共组件和 Browserless 都在 Docker 里跑 |
+| 公共基础设施仓库 | `/root/workspace/env/my-docker-config` | 提供 `infra-postgres` 等共享服务        |
 
 启用 corepack 让 pnpm 按 `package.json` 锁定版本运行:
 
@@ -243,20 +243,20 @@ kill $(lsof -ti:3000)
 
 ## 常用命令速查
 
-| 任务 | 命令 |
-|------|------|
-| 启动公共 postgres | `infra-up postgres` |
-| 停止公共 postgres | `infra-down postgres` |
+| 任务               | 命令                                                   |
+| ------------------ | ------------------------------------------------------ |
+| 启动公共 postgres  | `infra-up postgres`                                    |
+| 停止公共 postgres  | `infra-down postgres`                                  |
 | 进入 postgres 终端 | `sudo docker exec -it infra-postgres psql -U postgres` |
-| 启动 Browserless | `sudo docker start reactive-browserless` |
-| 安装依赖 | `pnpm install` |
-| 添加依赖 | `pnpm add <pkg>` |
-| 启动开发服务器 | `pnpm exec vp dev` |
-| 类型检查 | `pnpm typecheck` |
-| 单元测试 | `pnpm exec vp test` |
-| Lint + 格式 + 类型 | `pnpm exec vp check` |
-| 数据库迁移生成 | `pnpm db:generate` |
-| 数据库迁移执行 | `pnpm db:migrate` |
-| 数据库可视化 | `pnpm db:studio` |
-| 生产构建 | `pnpm exec vp build` |
-| 启动生产服务 | `pnpm start` |
+| 启动 Browserless   | `sudo docker start reactive-browserless`               |
+| 安装依赖           | `pnpm install`                                         |
+| 添加依赖           | `pnpm add <pkg>`                                       |
+| 启动开发服务器     | `pnpm exec vp dev`                                     |
+| 类型检查           | `pnpm typecheck`                                       |
+| 单元测试           | `pnpm exec vp test`                                    |
+| Lint + 格式 + 类型 | `pnpm exec vp check`                                   |
+| 数据库迁移生成     | `pnpm db:generate`                                     |
+| 数据库迁移执行     | `pnpm db:migrate`                                      |
+| 数据库可视化       | `pnpm db:studio`                                       |
+| 生产构建           | `pnpm exec vp build`                                   |
+| 启动生产服务       | `pnpm start`                                           |
