@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 ## Overview
 
 Reactive Resume is a single-package full-stack TypeScript app (not a monorepo) built with [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/overview) (React, Vite, Nitro). It serves both frontend and API on port 3000.
@@ -44,7 +48,7 @@ src/
   dialogs/        Modal/dialog components
   hooks/          Custom React hooks
   styles/         CSS and Tailwind configuration
-  stores/         Zustand stores (resume, AI, dialog, command palette)
+  integrations/*/store.ts  Zustand stores (ai, jobs); dialog store at src/dialogs/store.ts
 migrations/       Drizzle database migrations
 locales/          Lingui i18n message catalogs (47+ locales)
 ```
@@ -59,73 +63,110 @@ locales/          Lingui i18n message catalogs (47+ locales)
 
 ### API Architecture
 
-- **oRPC API** (`/api/rpc/*`) — Type-safe RPC with routers for: `ai`, `auth`, `resume`, `storage`, `printer`, `jobs`, `statistics`, `flags`. Three procedure types: `publicProcedure`, `protectedProcedure`, `serverOnlyProcedure`.
+- **oRPC API** (`/api/rpc/*`) — Type-safe RPC with routers for: `ai`, `auth`, `resume`, `storage`, `printer`, `jobs`, `statistics`, `flags`. Three procedure types: `publicProcedure`, `protectedProcedure`, `serverOnlyProcedure`. Auth supports session cookies, `x-api-key` header, and `Authorization: Bearer` (OAuth token). `serverOnlyProcedure` rejects browser requests by requiring the `x-server-side-call: true` header.
 - **Better Auth API** (`/api/auth/*`) — OAuth, session management, social provider callbacks.
 - **MCP Server** (`/mcp/`) — Model Context Protocol with OAuth Bearer tokens and API key auth. Exposes resumes as resources and tools for resume CRUD.
 
 ## Infrastructure Services
 
-Before running the dev server, Docker must be running with at least PostgreSQL. Start services via `compose.dev.yml`:
+**This project shares infrastructure with `/root/workspace/env/my-docker-config`.** Use the shared `infra-postgres` container instead of the project-local `compose.dev.yml` postgres.
+
+### Quick start
 
 ```bash
-sudo dockerd &>/var/log/dockerd.log &
+# Load infra helpers (if not already in shell)
+source /root/workspace/env/my-docker-config/infra/scripts/infra.sh
+
+# 1. Start shared PostgreSQL
+infra-up postgres
+
+# 2. Create the database (one-time; ignore "already exists" error)
+sudo docker exec infra-postgres psql -U postgres -c "CREATE DATABASE reactive_resume;"
+
+# 3. Start Browserless (PDF export) — attached to the infra network
+sudo docker run -d \
+  --name reactive-browserless \
+  --network infra_infra_net \
+  -p 4000:3000 \
+  -e TOKEN=1234567890 \
+  -e CONCURRENT=10 \
+  ghcr.io/browserless/chromium:latest
+
+# Daily restart (after first-time setup above is done)
+infra-up postgres && sudo docker start reactive-browserless
+```
+
+- **PostgreSQL** (port 5432) — shared `infra-postgres` container; credentials `postgres`/`root123`.
+- **Browserless** (host port 4000) — attached to `infra_infra_net`; token `1234567890`.
+- Drizzle migrations run automatically on `vp dev` startup via a Nitro plugin.
+
+### compose.dev.yml (alternative)
+
+Only use if the shared infra is unavailable. It creates a project-local postgres that **conflicts with `infra-postgres` on port 5432** — only one can run at a time.
+
+```bash
 sudo docker compose -f compose.dev.yml up -d postgres browserless
 ```
 
-- **PostgreSQL** (port 5432) — required. The app auto-runs Drizzle migrations on startup via a Nitro plugin.
-- **Browserless** (port 4000) — required for PDF export. Maps container port 3000 to host port 4000.
-
 ## Environment Variables
 
-Copy `.env.example` to `.env` if not present. Key notes for local dev:
+Copy `.env.example` to `.env` if not present. Required changes for the shared-infra setup:
 
-- `APP_URL` — local dev server origin on port 3000.
-- `PRINTER_APP_URL` — must use the Docker bridge gateway IP (not localhost) so the Browserless container can reach the app on the host. Get the IP with: `sudo docker network inspect reactive_resume_default --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}'`
-- `PRINTER_ENDPOINT` — websocket URL to Browserless on host port 4000 with token `1234567890`.
-- `DATABASE_URL` — PostgreSQL connection using `postgres:postgres` credentials on localhost:5432.
-- S3/Storage and SMTP vars can be left empty — the app falls back to local filesystem and console-logged emails.
+```dotenv
+APP_URL="http://localhost:3000"
+DATABASE_URL="postgresql://postgres:root123@localhost:5432/reactive_resume"
+PRINTER_APP_URL="http://172.20.0.1:3000"   # infra_infra_net gateway IP
+PRINTER_ENDPOINT="ws://localhost:4000?token=1234567890"
+```
+
+- **`PRINTER_APP_URL`** must be the Docker bridge gateway IP (`172.20.0.1` by default), not `localhost` — the Browserless container uses this to reach the app running on the host. Re-query with: `sudo docker network inspect infra_infra_net --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}'`
+- `STORAGE_*` and `MAIL_*` can be left empty — the app falls back to local filesystem and console-logged emails.
 
 ## Common Commands
 
-`vp` is the global CLI for Vite+. Do not use pnpm/npm/yarn directly — Vite+ wraps the underlying package manager.
+**Package manager:** `pnpm` is enforced by a `preinstall` hook (`npx only-allow pnpm`). `vp` is a thin wrapper around pnpm for package ops, but `pnpm exec vp <cmd>` also works. Do **not** use npm or yarn.
 
 | Task                       | Command                                                         |
 | -------------------------- | --------------------------------------------------------------- |
-| Install dependencies       | `vp install`                                                    |
-| Dev server (port 3000)     | `vp dev`                                                        |
-| Lint (Oxlint, type-aware)  | `vp lint --type-aware`                                          |
-| Format (Oxfmt)             | `vp fmt`                                                        |
-| Check (lint + fmt + types) | `vp check`                                                      |
+| Install dependencies       | `pnpm install`                                                  |
+| Dev server (port 3000)     | `pnpm exec vp dev`                                              |
+| Lint (Oxlint, type-aware)  | `pnpm exec vp lint --type-aware`                                |
+| Lint + fix                 | `pnpm lint:fix`                                                 |
+| Format check               | `pnpm fmt`                                                      |
+| Format fix                 | `pnpm fmt:fix`                                                  |
+| Check (lint + fmt + types) | `pnpm exec vp check`                                            |
 | Typecheck                  | `pnpm typecheck` (uses tsgo)                                    |
-| Run tests                  | `vp test`                                                       |
-| DB migrations              | `pnpm db:generate` / `pnpm db:migrate` (auto-runs on dev start) |
+| Run all tests              | `pnpm exec vp test`                                             |
+| Run a single test file     | `pnpm exec vp test src/utils/date.test.ts`                      |
+| Test with coverage         | `pnpm test:coverage`                                            |
+| DB migrations generate     | `pnpm db:generate`                                              |
+| DB migrations run          | `pnpm db:migrate` (auto-runs on dev start)                      |
 | DB studio                  | `pnpm db:studio`                                                |
 | i18n extraction            | `pnpm lingui:extract`                                           |
-| Add a dependency           | `vp add <package>`                                              |
-| Remove a dependency        | `vp remove <package>`                                           |
-| One-off binary             | `vp dlx <package>`                                              |
-| Build for production       | `vp build`                                                      |
-| Preview production build   | `vp preview`                                                    |
+| Add a dependency           | `pnpm add <package>`                                            |
+| Remove a dependency        | `pnpm remove <package>`                                         |
+| One-off binary             | `pnpm exec vp dlx <package>`                                    |
+| Build for production       | `pnpm exec vp build`                                            |
+| Preview production build   | `pnpm exec vp preview`                                          |
 | Start production server    | `pnpm start`                                                    |
 
 ## Vite+ Pitfalls
 
-- **Do not use pnpm/npm/yarn directly** for package operations — use `vp add`, `vp remove`, `vp install`, etc.
 - **Do not run `vp vitest` or `vp oxlint`** — they don't exist. Use `vp test` and `vp lint`.
 - **Do not install Vitest, Oxlint, Oxfmt, or tsdown directly** — Vite+ bundles them.
 - **Import from `vite-plus`**, not from `vite` or `vitest` directly (e.g., `import { defineConfig } from 'vite-plus'`).
 - **Vite+ commands take precedence** over `package.json` scripts. If there's a naming conflict, use `vp run <script>`.
-- **Use `vp dlx`** instead of `npx` or `pnpm dlx`.
 - **Type-aware linting** works out of the box with `vp lint --type-aware` — no need to install `oxlint-tsgolint`.
 
 ## Gotchas
 
 - The Docker daemon needs `fuse-overlayfs` storage driver and `iptables-legacy` in the cloud VM (nested container environment).
 - `pnpm.onlyBuiltDependencies` in `package.json` controls which packages are allowed to run install scripts — no interactive `pnpm approve-builds` needed.
-- Email verification is optional in dev — after signup, click "Continue" to skip.
+- Email verification is optional in dev — after signup, click "Continue" to skip. Verification emails are printed to the `vp dev` console.
 - Vite and Nitro use beta/nightly builds. Occasional upstream issues may occur.
+- If port 3000 is occupied: `kill $(lsof -ti:3000)`.
 
 ## Review Checklist for Agents
 
-- [ ] Run `vp install` after pulling remote changes and before getting started.
-- [ ] Run `pnpm lint:fix`, `pnpm fmt:fix`, `pnpm typecheck` and `vp test` to validate changes.
+- [ ] Run `pnpm install` after pulling remote changes and before getting started.
+- [ ] Run `pnpm lint:fix`, `pnpm fmt:fix`, `pnpm typecheck`, and `pnpm exec vp test` to validate changes.
