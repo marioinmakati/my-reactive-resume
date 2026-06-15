@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Reactive Resume is a single-package full-stack TypeScript app (not a monorepo) built with [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/overview) (React, Vite, Nitro). It serves both frontend and API on port 3000.
+Reactive Resume is a single-package full-stack TypeScript app (not a monorepo) built with [TanStack Start](https://tanstack.com/start/latest/docs/framework/react/overview) (React, Vite, Nitro). It serves both frontend and API on port 10003.
 
 This project uses [Vite+](https://vite.dev/blog/announcing-viteplus), a unified toolchain built on top of Vite, Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps runtime management, package management, and frontend tooling in a single global CLI called `vp`. All modules should be imported from the `vite-plus` dependency (e.g., `import { defineConfig } from 'vite-plus'` or `import { expect, test, vi } from 'vite-plus/test'`).
 
@@ -87,7 +87,7 @@ sudo docker exec infra-postgres psql -U postgres -c "CREATE DATABASE reactive_re
 sudo docker run -d \
   --name reactive-browserless \
   --network infra_infra_net \
-  -p 4000:3000 \
+  -p 10004:3000 \
   -e TOKEN=1234567890 \
   -e CONCURRENT=10 \
   ghcr.io/browserless/chromium:latest
@@ -96,8 +96,8 @@ sudo docker run -d \
 infra-up postgres && sudo docker start reactive-browserless
 ```
 
-- **PostgreSQL** (port 5432) — shared `infra-postgres` container; credentials `postgres`/`root123`.
-- **Browserless** (host port 4000) — attached to `infra_infra_net`; token `1234567890`.
+- **PostgreSQL** (port 11432) — shared `infra-postgres` container; credentials `postgres`/`root123`.
+- **Browserless** (host port 10004) — attached to `infra_infra_net`; token `1234567890`.
 - Drizzle migrations run automatically on `vp dev` startup via a Nitro plugin.
 
 ### compose.dev.yml (alternative)
@@ -113,10 +113,10 @@ sudo docker compose -f compose.dev.yml up -d postgres browserless
 Copy `.env.example` to `.env` if not present. Required changes for the shared-infra setup:
 
 ```dotenv
-APP_URL="http://localhost:3000"
-DATABASE_URL="postgresql://postgres:root123@localhost:5432/reactive_resume"
-PRINTER_APP_URL="http://172.20.0.1:3000"   # infra_infra_net gateway IP
-PRINTER_ENDPOINT="ws://localhost:4000?token=1234567890"
+APP_URL="http://localhost:10003"
+DATABASE_URL="postgresql://postgres:root123@localhost:11432/reactive_resume"
+PRINTER_APP_URL="http://172.20.0.1:10003"   # infra_infra_net gateway IP
+PRINTER_ENDPOINT="ws://localhost:10004?token=1234567890"
 ```
 
 - **`PRINTER_APP_URL`** must be the Docker bridge gateway IP (`172.20.0.1` by default), not `localhost` — the Browserless container uses this to reach the app running on the host. Re-query with: `sudo docker network inspect infra_infra_net --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}'`
@@ -129,7 +129,7 @@ PRINTER_ENDPOINT="ws://localhost:4000?token=1234567890"
 | Task                       | Command                                    |
 | -------------------------- | ------------------------------------------ |
 | Install dependencies       | `pnpm install`                             |
-| Dev server (port 3000)     | `pnpm exec vp dev`                         |
+| Dev server (port 10003)    | `pnpm exec vp dev`                         |
 | Lint (Oxlint, type-aware)  | `pnpm exec vp lint --type-aware`           |
 | Lint + fix                 | `pnpm lint:fix`                            |
 | Format check               | `pnpm fmt`                                 |
@@ -164,7 +164,7 @@ PRINTER_ENDPOINT="ws://localhost:4000?token=1234567890"
 - `pnpm.onlyBuiltDependencies` in `package.json` controls which packages are allowed to run install scripts — no interactive `pnpm approve-builds` needed.
 - Email verification is optional in dev — after signup, click "Continue" to skip. Verification emails are printed to the `vp dev` console.
 - Vite and Nitro use beta/nightly builds. Occasional upstream issues may occur.
-- If port 3000 is occupied: `kill $(lsof -ti:3000)`.
+- If port 10003 is occupied: `kill $(lsof -ti:10003)`.
 
 ## Syncing with Upstream
 

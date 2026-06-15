@@ -201,7 +201,7 @@ export const resumeService = {
       if (!resume.data.picture.url) throw new Error("Picture is not available");
 
       // Convert picture URL to base64 data, so there's no fetching required on the client.
-      const url = resume.data.picture.url.replace(env.APP_URL, "http://localhost:3000");
+      const url = resume.data.picture.url.replace(env.APP_URL, "http://localhost:10003");
       const base64 = await fetch(url)
         .then((res) => res.arrayBuffer())
         .then((buffer) => Buffer.from(buffer).toString("base64"));

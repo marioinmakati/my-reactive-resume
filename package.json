@@ -21,6 +21,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "dev": "vp dev",
+    "dev:up": "bash scripts/dev-start.sh",
     "docs:dev": "cd docs && npx mint dev",
     "fmt": "vp fmt --check",
     "fmt:fix": "vp fmt",
